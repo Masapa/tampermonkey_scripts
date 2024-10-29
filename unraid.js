@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name         Unraid traefik
 // @namespace    https://greasyfork.org/en/users/1388191-masapa
-// @version      2024-10-29_1
+// @version      2024-10-29_2
+// license       MIT
 // @description  Buttons that allows you to easily add traefik.enable and wanted middlewares
 // @author       Masapa
 // @match        http://unraid.local/Docker/AddContainer*
