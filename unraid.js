@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Unraid traefik
-// @namespace    http://tampermonkey.net/
+// @namespace    https://greasyfork.org/en/users/1388191-masapa
 // @version      2024-04-10
 // @description  Buttons that allows you to easily add traefik.enable and wanted middlewares
 // @author       Masapa
