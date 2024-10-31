@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Unraid traefik
 // @namespace    https://greasyfork.org/en/users/1388191-masapa
-// @version      2024-10-29_2
-// @license       MIT
+// @version      2024-10-31
+// @license      MIT
 // @description  Buttons that allows you to easily add traefik.enable and wanted middlewares
 // @author       Masapa
 // @match        http://unraid.local/Docker/AddContainer*
@@ -20,7 +20,7 @@
   const addButton = (i = 0) => {
     const name = document.getElementsByName("contName")[0].value;
 
-    let opts = {
+    const opts = {
       Description: "",
       Name: "Enable traefik",
       Type: "Label",
@@ -34,13 +34,14 @@
         ")'>Remove</button>",
       Number: confNum,
     };
+     $("#configLocation").append(makeConfig(opts));
 
-    let opts2 = {
+    const opts2 = {
       Description: "",
       Name: "Traefik auth",
       Type: "Label",
       Target: "traefik.http.routers." + name + ".middlewares",
-      Value: middlewares[0],
+      Value: i !== 2 ? middlewares[0] : middlewares.join(","),
       Buttons:
         "<button type='button' onclick='editConfigPopup(" +
         confNum +
@@ -49,30 +50,9 @@
         ")'>Remove</button>",
       Number: confNum,
     };
-    $("#configLocation").append(makeConfig(opts));
-
-    if (i === 2) {
-      opts2 = {
-        Description: "",
-        Name: "Traefik auth",
-        Type: "Label",
-        Target: "traefik.http.routers." + name + ".middlewares",
-        Value: middlewares.join(","),
-        Buttons:
-          "<button type='button' onclick='editConfigPopup(" +
-          confNum +
-          ",false)'>Edit</button><button type='button' onclick='removeConfig(" +
-          confNum +
-          ")'>Remove</button>",
-        Number: confNum,
-      };
-      reloadTriggers();
-      $('input[name="contName"]').trigger("change"); // signal change
-    }
 
     $("#configLocation").append(makeConfig(opts2));
-    reloadTriggers();
-    $('input[name="contName"]').trigger("change"); // signal change
+
   };
 
   const button = document.createElement("button");
@@ -81,7 +61,7 @@
   document.getElementsByClassName("left")[0].append(button);
   const button2 = document.createElement("button");
   button2.addEventListener("click", () => addButton(2));
-  button2.innerHTML = "Local only";
+  button2.innerHTML = "With All middlewares";
   document.getElementsByClassName("left")[0].append(button, button2);
 
 })();
