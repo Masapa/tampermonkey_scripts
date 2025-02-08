@@ -1,84 +1,335 @@
 // ==UserScript==
-// @name         Unraid traefik
+// @name         LTT FP Exclusive videos on youtube
 // @namespace    https://greasyfork.org/en/users/1388191-masapa
-// @version      2024-10-29_2
-// @license       MIT
-// @description  Buttons that allows you to easily add traefik.enable and wanted middlewares
-// @author       Masapa
-// @match        http://kissapuu.local/Docker/AddContainer*
-// @match        http://kissapuu.local/Docker/UpdateContainer*
-// @match        http://kissapuu.local/Apps/AddContainer*
-// @grant        none
-// @downloadURL https://update.greasyfork.org/scripts/514694/Unraid%20traefik.user.js
-// @updateURL https://update.greasyfork.org/scripts/514694/Unraid%20traefik.meta.js
+// @version      0.1
+// @description  Shows LTT floatplane exclusive videos on youtube feed
+// @author       You
+// @match        https://www.youtube.com/*
+// @icon         https://raw.githubusercontent.com/2fasvg/2fasvg.github.io/master/assets/img/logo/floatplane.com/floatplane.com.svg
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 (function () {
   "use strict";
 
-  const middlewares = ["auth@file"];
-  const customEntrypoints = ["local"];
+  const FLOATPLANE_API =
+    "https://www.floatplane.com/api/v3/content/creator?id=59f94c0bdd241b70349eb72b&channel=6413623f5b12cca228a28e78&limit=10&fetchAfter=0&search=&sort=DESC&hasVideo=true&hasAudio=false&hasPicture=false&hasText=false";
 
-    const generateOpts = (name, target, value) => {
-     return (
-         {
-      Description: "",
-      Name: name,
-      Type: "Label",
-      Target: target,
-      Value: value,
-      Buttons:
-        "<button type='button' onclick='editConfigPopup(" +
-        confNum +
-        ",false)'>Edit</button><button type='button' onclick='removeConfig(" +
-        confNum +
-        ")'>Remove</button>",
-      Number: confNum,
-         }
-     )
+  function createVideoCard(post) {
+    const card = document.createElement("div");
+    card.className = "style-scope ytd-rich-grid-row";
+    card.style.margin = "0 8px 0 8px";
 
+    const container = document.createElement("div");
+    container.style.width = "100%";
+
+    // Thumbnail section
+    const thumbnailContainer = document.createElement("div");
+    thumbnailContainer.style.position = "relative";
+    thumbnailContainer.style.aspectRatio = "16/9";
+    thumbnailContainer.style.backgroundColor = "#f1f1f1";
+    thumbnailContainer.style.borderRadius = "12px";
+    thumbnailContainer.style.overflow = "hidden";
+
+    const link = document.createElement("a");
+    link.href = `https://www.floatplane.com/post/${post.id}`;
+    link.target = "_blank";
+    link.style.display = "block";
+    link.style.width = "100%";
+    link.style.height = "100%";
+
+    const thumbnail = document.createElement("img");
+    if (post.thumbnail && post.thumbnail.path) {
+      thumbnail.src = post.thumbnail.path;
+    } else {
+      // Default thumbnail for text-only posts
+      thumbnail.src = post.creator.icon.path;
+    }
+    thumbnail.style.width = "100%";
+    thumbnail.style.height = "100%";
+    thumbnail.style.objectFit = "cover";
+
+    // Type indicator
+    const typeIndicator = document.createElement("div");
+    typeIndicator.style.position = "absolute";
+    typeIndicator.style.bottom = "4px";
+    typeIndicator.style.right = "4px";
+    typeIndicator.style.background = "rgba(0, 0, 0, 0.8)";
+    typeIndicator.style.color = "white";
+    typeIndicator.style.padding = "3px 4px";
+    typeIndicator.style.borderRadius = "4px";
+    typeIndicator.style.fontSize = "12px";
+    typeIndicator.style.fontWeight = "500";
+    typeIndicator.style.lineHeight = "12px";
+
+    if (post.metadata.hasVideo) {
+      typeIndicator.textContent = formatDuration(post.metadata.videoDuration);
+    } else if (post.metadata.hasPicture) {
+      typeIndicator.textContent = "Image";
+    } else {
+      typeIndicator.textContent = "Post";
+    }
+    thumbnailContainer.appendChild(typeIndicator);
+
+    // Info section
+    const infoContainer = document.createElement("div");
+    infoContainer.style.padding = "12px 0";
+    infoContainer.style.display = "flex";
+    infoContainer.style.gap = "12px";
+
+    const creatorIcon = document.createElement("img");
+    creatorIcon.src = post.creator.icon.childImages[1].path;
+    creatorIcon.style.width = "36px";
+    creatorIcon.style.height = "36px";
+    creatorIcon.style.borderRadius = "50%";
+    creatorIcon.style.marginTop = "2px";
+
+    const textContainer = document.createElement("div");
+    textContainer.style.flex = "1";
+    textContainer.style.minWidth = "0";
+
+    const titleLink = document.createElement("a");
+    titleLink.href = `https://www.floatplane.com/post/${post.id}`;
+    titleLink.style.color = "inherit";
+    titleLink.style.textDecoration = "none";
+    titleLink.target = "_blank";
+
+    const titleDiv = document.createElement("div");
+    titleDiv.style.fontWeight = "500";
+    titleDiv.style.marginBottom = "4px";
+    titleDiv.style.fontSize = "14px";
+    titleDiv.style.lineHeight = "20px";
+    titleDiv.style.color = "var(--yt-spec-text-primary)";
+    titleDiv.style.display = "-webkit-box";
+    titleDiv.style.webkitLineClamp = "2";
+    titleDiv.style.webkitBoxOrient = "vertical";
+    titleDiv.style.overflow = "hidden";
+    titleDiv.style.textOverflow = "ellipsis";
+    titleDiv.textContent = post.title;
+
+    const metaContainer = document.createElement("div");
+    metaContainer.style.color = "#606060";
+    metaContainer.style.fontSize = "12px";
+    metaContainer.style.lineHeight = "18px";
+
+    const creatorName = document.createElement("div");
+    creatorName.textContent = post.creator.title;
+    creatorName.style.overflow = "hidden";
+    creatorName.style.textOverflow = "ellipsis";
+    creatorName.style.whiteSpace = "nowrap";
+
+    const stats = document.createElement("div");
+    stats.textContent = `${post.likes} likes • ${
+      post.comments
+    } comments • ${getTimeAgo(new Date(post.releaseDate))}`;
+    stats.style.overflow = "hidden";
+    stats.style.textOverflow = "ellipsis";
+    stats.style.whiteSpace = "nowrap";
+
+    // Assemble the elements
+    link.appendChild(thumbnail);
+    thumbnailContainer.appendChild(link);
+
+    titleLink.appendChild(titleDiv);
+    metaContainer.appendChild(creatorName);
+    metaContainer.appendChild(stats);
+    textContainer.appendChild(titleLink);
+    textContainer.appendChild(metaContainer);
+    infoContainer.appendChild(creatorIcon);
+    infoContainer.appendChild(textContainer);
+
+    container.appendChild(thumbnailContainer);
+    container.appendChild(infoContainer);
+    card.appendChild(container);
+
+    return card;
+  }
+
+  function formatDuration(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${remainingSeconds
+        .toString()
+        .padStart(2, "0")}`;
+    }
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  }
+
+  function getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+
+    const intervals = {
+      year: 31536000,
+      month: 2592000,
+      week: 604800,
+      day: 86400,
+      hour: 3600,
+      minute: 60,
+    };
+
+    for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+      const interval = Math.floor(seconds / secondsInUnit);
+      if (interval >= 1) {
+        return `${interval} ${unit}${interval === 1 ? "" : "s"} ago`;
+      }
     }
 
+    return "just now";
+  }
 
-  const addButton = (i = 0) => {
-    const name = document.getElementsByName("contName")[0].value;
-    const configLocation = $("#configLocation");
+  function createFloatplaneSection(videos) {
+    const section = document.createElement("div");
+    section.id = "floatplane-section";
+    section.className = "style-scope ytd-rich-grid-renderer";
+    section.style.marginBottom = "24px";
 
+    const contentContainer = document.createElement("div");
+    contentContainer.style.padding = "0 24px";
 
-      if(i === 0) {
-        configLocation.append(makeConfig(generateOpts("Enable traefik","traefik.enable","true")));
-        configLocation.append(makeConfig(generateOpts("Traefik auth","traefik.http.routers." + name + ".middlewares",middlewares[0])));
+    // Create header container for logo and text
+    const headerContainer = document.createElement("div");
+    headerContainer.style.display = "flex";
+    headerContainer.style.alignItems = "center";
+    headerContainer.style.gap = "8px";
+    headerContainer.style.margin = "0 0 16px 0";
+
+    // Create logo
+    const logo = document.createElement("img");
+    logo.src =
+      "https://raw.githubusercontent.com/2fasvg/2fasvg.github.io/master/assets/img/logo/floatplane.com/floatplane.com.svg";
+    logo.style.height = "20px";
+    logo.style.width = "auto";
+    logo.style.filter = "var(--yt-spec-icon-active-other)"; // This will make the logo match YouTube's theme
+
+    // Create heading
+    const heading = document.createElement("h2");
+    heading.style.color = "var(--yt-spec-text-primary)";
+    heading.style.fontSize = "16px";
+    heading.style.fontFamily = "Roboto, Arial, sans-serif";
+    heading.style.lineHeight = "22px";
+    heading.style.fontWeight = "400";
+    heading.textContent = "Latest from Floatplane";
+
+    // Assemble header
+    headerContainer.appendChild(logo);
+    headerContainer.appendChild(heading);
+
+    const grid = document.createElement("div");
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(5, 1fr)";
+    grid.style.gap = "16px";
+    grid.style.maxWidth = "100%";
+    grid.style.margin = "0 auto";
+
+    videos.forEach((video) => {
+      grid.appendChild(createVideoCard(video));
+    });
+
+    contentContainer.appendChild(headerContainer);
+    contentContainer.appendChild(grid);
+    section.appendChild(contentContainer);
+
+    return section;
+  }
+
+  function insertFloatplaneSection() {
+    // Check if section already exists
+    if (document.getElementById("floatplane-section")) return;
+
+    // Look for the Shorts section
+    const shortsSection = document.querySelector("ytd-rich-section-renderer");
+    if (!shortsSection) return;
+
+    GM_xmlhttpRequest({
+      method: "GET",
+      url: FLOATPLANE_API,
+      headers: {
+        Accept: "application/json",
+      },
+      onload: function (response) {
+        try {
+          // Double check section doesn't exist before inserting
+          if (document.getElementById("floatplane-section")) return;
+
+          const videos = JSON.parse(response.responseText);
+          const section = createFloatplaneSection(videos);
+          shortsSection.parentNode.insertBefore(section, shortsSection);
+        } catch (error) {
+          console.error("Error creating Floatplane section:", error);
+        }
+      },
+    });
+  }
+
+  // Wait for the page to load and handle navigation
+  function initFloatplane() {
+    let isProcessing = false;
+
+    const checkAndInsert = () => {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      try {
+        insertFloatplaneSection();
+      } finally {
+        isProcessing = false;
       }
-      if(i === 1) {
-        configLocation.append(makeConfig(generateOpts("Enable traefik","traefik.enable","true")));
-        configLocation.append(makeConfig(generateOpts("Traefik auth","traefik.http.routers." + name + ".middlewares",middlewares.join(","))));
+    };
+
+    // Initial check
+    checkAndInsert();
+
+    // Watch for navigation and DOM changes
+    const observer = new MutationObserver((mutations) => {
+      if (document.getElementById("floatplane-section")) {
+        return; // Don't proceed if section exists
       }
-      if(i === 2) {
-        configLocation.append(makeConfig(generateOpts("Traefik entrypoints","traefik.http.routers." + name + ".entrypoints",customEntrypoints.join(","))));
+
+      for (const mutation of mutations) {
+        if (
+          mutation.type === "childList" &&
+          document.querySelector("ytd-rich-section-renderer")
+        ) {
+          checkAndInsert();
+          break;
+        }
       }
-      if(i === 3) {
-          configLocation.append(makeConfig(generateOpts("Traefik container port","traefik.http.services."+name+".loadbalancer.server.port","8080")));
+    });
+
+    // Observe the main content area
+    const contentArea =
+      document.querySelector("ytd-rich-grid-renderer") || document.body;
+    observer.observe(contentArea, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Watch for URL changes
+    let lastUrl = location.href;
+    new MutationObserver(() => {
+      const url = location.href;
+      if (url !== lastUrl) {
+        lastUrl = url;
+        // Remove existing section when URL changes
+        const existingSection = document.getElementById("floatplane-section");
+        if (existingSection) {
+          existingSection.remove();
+        }
+        setTimeout(checkAndInsert, 1000);
       }
-  
-  };
+    }).observe(document.querySelector("title"), {
+      subtree: true,
+      characterData: true,
+    });
+  }
 
-    //
-
-  const button = document.createElement("button");
-    button.addEventListener("click", () => addButton());
-  button.innerHTML = "TRAEFIK";
-  document.getElementsByClassName("left")[0].append(button);
-  const button2 = document.createElement("button");
-  button2.addEventListener("click", () => addButton(1));
-  button2.innerHTML = "With all middlewares";
-
-  const button3 = document.createElement("button");
-  button3.addEventListener("click", () => addButton(2));
-  button3.innerHTML = "Add endpoints";
-
-  const button4 = document.createElement("button");
-  button4.addEventListener("click", () => addButton(3));
-  button4.innerHTML = "Add port";
-
-document.getElementsByClassName("left")[0].append(button, button2,button3,button4);
+  // Initialize when the page loads
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initFloatplane);
+  } else {
+    initFloatplane();
+  }
 })();
