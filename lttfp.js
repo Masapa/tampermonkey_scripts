@@ -211,7 +211,7 @@
     heading.style.fontFamily = "Roboto, Arial, sans-serif";
     heading.style.lineHeight = "22px";
     heading.style.fontWeight = "400";
-    heading.textContent = "Latest from Floatplane";
+    heading.textContent = "Latest from FP Exclusives";
 
     // Assemble header
     headerContainer.appendChild(logo);
