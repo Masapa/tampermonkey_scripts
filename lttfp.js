@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         LTT FP Exclusive videos on youtube
 // @namespace    https://greasyfork.org/en/users/1388191-masapa
-// @version      0.1
+// @version      0.2
 // @description  Shows LTT floatplane exclusive videos on youtube feed
 // @author       You
 // @match        https://www.youtube.com/*
