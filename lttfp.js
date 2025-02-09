@@ -1,5 +1,4 @@
 // ==UserScript==
-// @name         Add Custom YouTube Section
 // @name         LTT FP Exclusive videos on youtube
 // @namespace    https://greasyfork.org/en/users/1388191-masapa
 // @version      0.4
