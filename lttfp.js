@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Add Custom YouTube Section
-// @namespace    http://tampermonkey.net/
-// @version      0.3
-// @description  Adds a custom Floatplane section before the first rich section on YouTube
-// @author       You
+// @name         LTT FP Exclusive videos on youtube
+// @namespace    https://greasyfork.org/en/users/1388191-masapa
+// @version      0.4
+// @description  Shows LTT floatplane exclusive videos on youtube feed
+// @author       Masapa
 // @match        https://www.youtube.com/*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
+// @icon         https://raw.githubusercontent.com/2fasvg/2fasvg.github.io/master/assets/img/logo/floatplane.com/floatplane.com.svg
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
