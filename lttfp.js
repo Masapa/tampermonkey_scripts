@@ -1,11 +1,11 @@
 // ==UserScript==
-// @name         LTT FP Exclusive videos on youtube
-// @namespace    https://greasyfork.org/en/users/1388191-masapa
-// @version      0.2
-// @description  Shows LTT floatplane exclusive videos on youtube feed
+// @name         Add Custom YouTube Section
+// @namespace    http://tampermonkey.net/
+// @version      0.3
+// @description  Adds a custom Floatplane section before the first rich section on YouTube
 // @author       You
 // @match        https://www.youtube.com/*
-// @icon         https://raw.githubusercontent.com/2fasvg/2fasvg.github.io/master/assets/img/logo/floatplane.com/floatplane.com.svg
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -236,12 +236,16 @@
   }
 
   function insertFloatplaneSection() {
-    // Check if section already exists
-    if (document.getElementById("floatplane-section")) return;
+    if (document.getElementById("floatplane-section")) return false;
 
-    // Look for the Shorts section
-    const shortsSection = document.querySelector("ytd-rich-section-renderer");
-    if (!shortsSection) return;
+    const shortsSections = document.querySelectorAll(
+      "ytd-rich-section-renderer"
+    );
+    const shortsSection = Array.from(shortsSections).find((section) => {
+      return section.querySelector("#title")?.textContent?.includes("Shorts");
+    });
+
+    if (!shortsSection) return false;
 
     GM_xmlhttpRequest({
       method: "GET",
@@ -251,7 +255,6 @@
       },
       onload: function (response) {
         try {
-          // Double check section doesn't exist before inserting
           if (document.getElementById("floatplane-section")) return;
 
           const videos = JSON.parse(response.responseText);
@@ -262,20 +265,39 @@
         }
       },
     });
+
+    return true; // Return true if we found the shorts section and attempted insertion
   }
 
-  // Wait for the page to load and handle navigation
   function initFloatplane() {
     let isProcessing = false;
+    let retryCount = 0;
+    const MAX_RETRIES = 5;
 
     const checkAndInsert = () => {
       if (isProcessing) return;
       isProcessing = true;
 
       try {
-        insertFloatplaneSection();
+        // If we find and insert the section, reset retry count
+        if (insertFloatplaneSection()) {
+          retryCount = 0;
+        } else if (retryCount < MAX_RETRIES) {
+          // If not found and we haven't hit max retries, try again
+          retryCount++;
+          setTimeout(checkAndInsert, 1000);
+        }
       } finally {
         isProcessing = false;
+      }
+    };
+
+    // Function to handle navigation changes
+    const handleNavigation = () => {
+      retryCount = 0; // Reset retry count on navigation
+      const existingSection = document.getElementById("floatplane-section");
+      if (existingSection) {
+        existingSection.remove();
       }
     };
 
@@ -284,9 +306,7 @@
 
     // Watch for navigation and DOM changes
     const observer = new MutationObserver((mutations) => {
-      if (document.getElementById("floatplane-section")) {
-        return; // Don't proceed if section exists
-      }
+      if (document.getElementById("floatplane-section")) return;
 
       for (const mutation of mutations) {
         if (
@@ -313,17 +333,18 @@
       const url = location.href;
       if (url !== lastUrl) {
         lastUrl = url;
-        // Remove existing section when URL changes
-        const existingSection = document.getElementById("floatplane-section");
-        if (existingSection) {
-          existingSection.remove();
-        }
-        setTimeout(checkAndInsert, 1000);
+        handleNavigation();
       }
     }).observe(document.querySelector("title"), {
       subtree: true,
       characterData: true,
     });
+
+    // Watch for YouTube's navigation events
+    window.addEventListener("yt-navigate-start", handleNavigation);
+    window.addEventListener("yt-navigate-finish", handleNavigation);
+    window.addEventListener("popstate", handleNavigation);
+    window.addEventListener("load", handleNavigation);
   }
 
   // Initialize when the page loads
