@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         LTT FP Exclusive videos on youtube
 // @namespace    https://greasyfork.org/en/users/1388191-masapa
-// @version      0.4
+// @version      0.5
 // @description  Shows LTT floatplane exclusive videos on youtube feed
 // @author       Masapa
 // @match        https://www.youtube.com/*
@@ -13,7 +13,7 @@
   "use strict";
 
   const FLOATPLANE_API =
-    "https://www.floatplane.com/api/v3/content/creator?id=59f94c0bdd241b70349eb72b&channel=6413623f5b12cca228a28e78&limit=10&fetchAfter=0&search=&sort=DESC&hasVideo=true&hasAudio=false&hasPicture=false&hasText=false";
+    "https://www.floatplane.com/api/v3/content/creator?id=59f94c0bdd241b70349eb72b&channel=6413623f5b12cca228a28e78&limit=10&fetchAfter=0&search=&sort=DESC&hasVideo=false&hasAudio=false&hasPicture=false&hasText=false";
 
   function createVideoCard(post) {
     const card = document.createElement("div");
